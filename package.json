@@ -13,7 +13,7 @@
     "install:all": "cd server && npm install && cd ../client && npm install",
     "build": "cd client && npm install && npm run build",
     "start": "cd server && NODE_ENV=production node index.js",
-    "render-build": "cd server && npm install && cd ../client && npm install && npm run build"
+    "render-build": "cd server && npm install && cd ../client && npm install --include=dev && npm run build"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

@@ -1,4 +1,4 @@
-# PollRoom — Real-Time Poll Rooms
+# PollRoom - Real-Time Poll Rooms
 
 A full-stack web application for creating live polls, sharing them via link, and collecting votes with real-time results. Built with React, Express, Socket.IO, and MongoDB.
 
@@ -9,19 +9,19 @@ A full-stack web application for creating live polls, sharing them via link, and
 ## Features
 
 ### Core
-- **Poll Creation** — Create polls with a question and 2–10 options
-- **Shareable Links** — Every poll gets a short URL (`/poll/Ab3xK9qP`)
-- **Single-Choice Voting** — One vote per user per poll
-- **Real-Time Results** — All viewers see vote counts update instantly via WebSocket (Socket.IO)
-- **Persistence** — Polls and votes stored in MongoDB; share links work permanently
+- **Poll Creation** - Create polls with a question and 2–10 options
+- **Shareable Links** - Every poll gets a short URL (`/poll/Ab3xK9qP`)
+- **Single-Choice Voting** - One vote per user per poll
+- **Real-Time Results** - All viewers see vote counts update instantly via WebSocket (Socket.IO)
+- **Persistence** - Polls and votes stored in MongoDB; share links work permanently
 
 ### USP / Extra Features
-- **Explore Feed** — Browse recent public polls at `/explore` with pagination and "Active only" filter
-- **Voting Deadline** — Optional timer (15 min / 1 hr / 6 hr / 24 hr / 7 days) with live countdown
-- **Live Analytics Dashboard** — Real-time viewer count, vote velocity (votes/min), and SVG sparkline showing vote trends
-- **Live Percentage Deltas** — When a vote arrives, each option shows `+2.1%` or `-1.5%` change in real time
-- **Smart Share UX** — Copy link, WhatsApp share button, and QR code generation
-- **Dynamic OG Tags** — In production, poll pages inject dynamic Open Graph meta tags for rich previews on WhatsApp, Slack, Twitter, etc.
+- **Explore Feed** - Browse recent public polls at `/explore` with pagination and "Active only" filter
+- **Voting Deadline** - Optional timer (15 min / 1 hr / 6 hr / 24 hr / 7 days) with live countdown
+- **Live Analytics Dashboard** - Real-time viewer count, vote velocity (votes/min), and SVG sparkline showing vote trends
+- **Live Percentage Deltas** - When a vote arrives, each option shows `+2.1%` or `-1.5%` change in real time
+- **Smart Share UX** - Copy link, WhatsApp share button, and QR code generation
+- **Dynamic OG Tags** - In production, poll pages inject dynamic Open Graph meta tags for rich previews on WhatsApp, Slack, Twitter, etc.
 
 ---
 
@@ -30,7 +30,7 @@ A full-stack web application for creating live polls, sharing them via link, and
 ### Mechanism 1: Browser Fingerprint (Visitor ID)
 - **What it does**: On first visit, the app generates a `crypto.randomUUID()` and stores it in `localStorage` as a persistent `visitorId`. This ID is sent with every vote request.
 - **How it prevents abuse**: A unique compound index on `(pollId, visitorId)` in MongoDB enforces one vote per browser per poll at the database level. Even if the API is called directly, the database rejects duplicate votes with a `409 Conflict`.
-- **Known limitation**: Clearing localStorage or using incognito mode generates a new visitorId, allowing the same person to vote again from the same device. This is a deliberate trade-off — we don't require user accounts/login for frictionless UX.
+- **Known limitation**: Clearing localStorage or using incognito mode generates a new visitorId, allowing the same person to vote again from the same device. This is a deliberate trade-off - we don't require user accounts/login for frictionless UX.
 
 ### Mechanism 2: IP-Based Rate Limiting
 - **What it does**: Uses `express-rate-limit` to limit voting requests to **5 votes per IP address per 15-minute window**. A separate general API limiter caps all API requests at **60 per minute per IP**.
@@ -44,27 +44,27 @@ A full-stack web application for creating live polls, sharing them via link, and
 
 ## Edge Cases Handled
 
-1. **Race condition on duplicate votes** — Even if two identical vote requests arrive simultaneously, the MongoDB unique index (`pollId + visitorId`) guarantees only one succeeds. The `11000` duplicate key error is caught and returns a clean `409`.
-2. **Poll not found** — Returns a `404` with a user-friendly "Poll not found" page and a link back to create a new one.
-3. **Empty/invalid options** — Trims whitespace and filters empty strings. Validates at least 2 non-empty options server-side.
-4. **Question length** — Capped at 500 characters both client-side (`maxLength`) and server-side.
-5. **Option count** — Validated at 2–10 options via Mongoose schema validator.
-6. **Expired poll voting** — Server checks `expiresAt` before accepting votes. Client shows countdown and disables buttons.
-7. **Viewer count accuracy** — Uses Socket.IO's `disconnecting` event (not `disconnect`) to ensure room size is updated after the socket has actually left.
-8. **IP privacy** — IPs are SHA-256 hashed (first 16 chars) before storage. Raw IPs are never persisted.
-9. **XSS in OG tags** — Dynamic OG meta values are escaped (`"` → `&quot;`, `<` → `&lt;`) before injection.
-10. **SPA routing** — The Express server has a wildcard fallback (`*`) to serve `index.html` for all client-side routes.
+1. **Race condition on duplicate votes** - Even if two identical vote requests arrive simultaneously, the MongoDB unique index (`pollId + visitorId`) guarantees only one succeeds. The `11000` duplicate key error is caught and returns a clean `409`.
+2. **Poll not found** - Returns a `404` with a user-friendly "Poll not found" page and a link back to create a new one.
+3. **Empty/invalid options** - Trims whitespace and filters empty strings. Validates at least 2 non-empty options server-side.
+4. **Question length** - Capped at 500 characters both client-side (`maxLength`) and server-side.
+5. **Option count** - Validated at 2–10 options via Mongoose schema validator.
+6. **Expired poll voting** - Server checks `expiresAt` before accepting votes. Client shows countdown and disables buttons.
+7. **Viewer count accuracy** - Uses Socket.IO's `disconnecting` event (not `disconnect`) to ensure room size is updated after the socket has actually left.
+8. **IP privacy** - IPs are SHA-256 hashed (first 16 chars) before storage. Raw IPs are never persisted.
+9. **XSS in OG tags** - Dynamic OG meta values are escaped (`"` → `&quot;`, `<` → `&lt;`) before injection.
+10. **SPA routing** - The Express server has a wildcard fallback (`*`) to serve `index.html` for all client-side routes.
 
 ---
 
 ## Known Limitations / Future Improvements
 
-- **No user accounts** — Voting relies on localStorage fingerprinting, not authentication. Adding optional accounts (OAuth) would enable stronger abuse prevention and poll management (edit/delete).
-- **VPN/proxy circumvention** — Users can bypass IP rate limiting with VPNs. A CAPTCHA challenge on vote could mitigate this for high-traffic polls.
-- **No poll editing/deletion** — Once created, polls cannot be modified. Adding creator tokens (stored in localStorage) would enable this without requiring accounts.
-- **Single-server Socket.IO** — Currently runs on a single Node.js instance. For horizontal scaling, Socket.IO would need a Redis adapter (`@socket.io/redis-adapter`) to share state across instances.
-- **No real-time feed** — The explore feed is fetched via REST polling. Adding Socket.IO events for new poll creation would make the feed truly live.
-- **Analytics retention** — Vote activity is queried from the Vote collection directly. For high-volume polls, a dedicated time-series collection or Redis sorted sets would improve performance.
+- **No user accounts** - Voting relies on localStorage fingerprinting, not authentication. Adding optional accounts (OAuth) would enable stronger abuse prevention and poll management (edit/delete).
+- **VPN/proxy circumvention** - Users can bypass IP rate limiting with VPNs. A CAPTCHA challenge on vote could mitigate this for high-traffic polls.
+- **No poll editing/deletion** - Once created, polls cannot be modified. Adding creator tokens (stored in localStorage) would enable this without requiring accounts.
+- **Single-server Socket.IO** - Currently runs on a single Node.js instance. For horizontal scaling, Socket.IO would need a Redis adapter (`@socket.io/redis-adapter`) to share state across instances.
+- **No real-time feed** - The explore feed is fetched via REST polling. Adding Socket.IO events for new poll creation would make the feed truly live.
+- **Analytics retention** - Vote activity is queried from the Vote collection directly. For high-volume polls, a dedicated time-series collection or Redis sorted sets would improve performance.
 
 ---
 
